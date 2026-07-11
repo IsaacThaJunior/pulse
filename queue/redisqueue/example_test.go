@@ -18,7 +18,7 @@ func Example() {
 	client := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	defer client.Close()
 
-	var q queue.Queue = redisqueue.NewRedisQueue(client, "events_queue")
+	var q queue.Queue = redisqueue.NewRedisQueue(client)
 
 	if err := q.EnqueueWithPriority("task-123", "high"); err != nil {
 		fmt.Println("enqueue failed:", err)

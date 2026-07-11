@@ -39,7 +39,7 @@ import (
 
 func main() {
 	client := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
-	q := redisqueue.NewRedisQueue(client, "my_queue")
+	q := redisqueue.NewRedisQueue(client)
 
 	mux := worker.NewMux()
 	mux.Handle("send_email", func(ctx context.Context, task worker.Task) error {

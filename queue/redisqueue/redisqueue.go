@@ -20,7 +20,6 @@ var _ queue.Queue = (*RedisQueue)(nil)
 // tasks).
 type RedisQueue struct {
 	client *redis.Client
-	key    string
 	ctx    context.Context
 }
 
@@ -29,12 +28,10 @@ type ScheduledTask struct {
 	Priority string `json:"priority"`
 }
 
-// NewRedisQueue wraps an already-configured *redis.Client. key names the
-// queue used by Depth.
-func NewRedisQueue(client *redis.Client, key string) *RedisQueue {
+// NewRedisQueue wraps an already-configured *redis.Client.
+func NewRedisQueue(client *redis.Client) *RedisQueue {
 	return &RedisQueue{
 		client: client,
-		key:    key,
 		ctx:    context.Background(),
 	}
 }
@@ -144,10 +141,6 @@ func (r *RedisQueue) RemoveFromDLQ(taskID string) error {
 		return fmt.Errorf("task %s not found in DLQ", taskID)
 	}
 	return nil
-}
-
-func (r *RedisQueue) Depth() (int64, error) {
-	return r.client.LLen(r.ctx, r.key).Result()
 }
 
 func (r *RedisQueue) GetQueueDepths() (map[string]int64, error) {

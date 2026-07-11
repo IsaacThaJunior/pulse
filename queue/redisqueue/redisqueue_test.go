@@ -14,11 +14,11 @@ func TestRedisQueue(t *testing.T) {
 	client, cleanup := setupTestRedis(t)
 	defer cleanup()
 
-	queue := NewRedisQueue(client, "test_queue")
+	queue := NewRedisQueue(client)
 	ctx := context.Background()
 
 	t.Run("Enqueue and Dequeue", func(t *testing.T) {
-		client.Del(ctx, "test_queue")
+		client.Del(ctx, "events_high", "events_low")
 
 		err := queue.EnqueueWithPriority("task1", "high")
 		require.NoError(t, err)
@@ -36,8 +36,8 @@ func TestRedisQueue(t *testing.T) {
 	})
 
 	t.Run("Dequeue from empty queue", func(t *testing.T) {
-		client.Del(ctx, "empty_queue")
-		emptyQueue := NewRedisQueue(client, "empty_queue")
+		client.Del(ctx, "events_high", "events_medium", "events_low")
+		emptyQueue := NewRedisQueue(client)
 
 		task, _, err := emptyQueue.DequeuePriorityBlocking(5 * time.Second)
 		require.NoError(t, err)
@@ -55,27 +55,9 @@ func TestRedisQueue(t *testing.T) {
 		assert.Equal(t, int64(1), length)
 	})
 
-	t.Run("Depth returns correct count", func(t *testing.T) {
-		queueKey := "depth_test"
-		client.Del(ctx, queueKey)
-		depthQueue := NewRedisQueue(client, queueKey) // Use the same key
-
-		depth, err := depthQueue.Depth()
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), depth)
-
-		depthQueue.EnqueueWithPriority("task1", "high")
-		depthQueue.EnqueueWithPriority("task2", "low")
-
-		depth, err = depthQueue.Depth()
-		require.NoError(t, err)
-		assert.Equal(t, int64(2), depth)
-	})
-
 	t.Run("Concurrent operations", func(t *testing.T) {
-		queueKey := "concurrent_queue"
-		client.Del(ctx, queueKey)
-		concurrentQueue := NewRedisQueue(client, queueKey) // Use the same key
+		client.Del(ctx, "events_medium")
+		concurrentQueue := NewRedisQueue(client)
 
 		const numTasks = 100
 		var wg sync.WaitGroup
@@ -91,9 +73,9 @@ func TestRedisQueue(t *testing.T) {
 
 		wg.Wait()
 
-		length, err := concurrentQueue.Depth()
+		depths, err := concurrentQueue.GetQueueDepths()
 		require.NoError(t, err)
-		assert.Equal(t, int64(numTasks), length)
+		assert.Equal(t, int64(numTasks), depths["medium"])
 	})
 
 }
