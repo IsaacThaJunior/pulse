@@ -1,5 +1,9 @@
 # pulse
 
+[![CI](https://github.com/IsaacThaJunior/pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/IsaacThaJunior/pulse/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/isaacthajunior/pulse.svg)](https://pkg.go.dev/github.com/isaacthajunior/pulse)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A backend-agnostic priority job queue and worker engine for Go.
 
 `pulse` gives you the parts of a background job system that are tedious and
@@ -10,8 +14,9 @@ and metrics. You bring your task types, your handler functions, and your
 database. `pulse` doesn't ship business logic, an HTTP API, or a specific
 database integration; those are your app's job, not the library's.
 
-> **Status:** pre-release. APIs may still shift. Not yet tagged/versioned or
-> published to a registry.
+> **Status:** `v0.1.0`, pre-1.0. APIs may still shift between minor
+> versions — pin a version and read the [tag notes](https://github.com/IsaacThaJunior/pulse/tags)
+> before upgrading.
 
 ---
 
@@ -53,12 +58,8 @@ not a rewrite.
 ## Install
 
 ```bash
-go get github.com/isaacthajunior/pulse
+go get github.com/isaacthajunior/pulse@v0.1.0
 ```
-
-(Not published/tagged yet — see [Status](#pulse) above. Until then, point at
-a local checkout with a `replace` directive in your `go.mod`:
-`replace github.com/isaacthajunior/pulse => /path/to/pulse`.)
 
 ## Quickstart
 
@@ -259,10 +260,10 @@ integration tests; everything else is infra-free).
 
 ## Reference app
 
-`pulse` was extracted from a real application — a task-processing API
-(HTTP submission, Postgres persistence, MinIO file storage, image
-resizing/URL scraping/report generation as task types) that now imports
-`pulse` for everything generic instead of implementing it inline. That app
-is the proving ground for `pulse`'s design, including the
+`pulse` was extracted from **[event-processing-platform](https://github.com/IsaacThaJunior/event-processing-platform)**,
+a real task-processing API (HTTP submission, Postgres persistence, MinIO
+file storage, image resizing/URL scraping/report generation as task types)
+that now imports `pulse` for everything generic instead of implementing it
+inline. That app is the proving ground for `pulse`'s design, including the
 `internal/chaining` pattern referenced above for adding declarative task
 chaining on top of `pulse` without the library needing to know about it.
