@@ -226,6 +226,39 @@ func TestPool_RetryExhaustion_DLQ(t *testing.T) {
 	t.Fatal("expected task to land in the DLQ")
 }
 
+func TestPool_HandlerPanicRecovered(t *testing.T) {
+	q := &fakeQueue{}
+	store := newFakeStore()
+	mux := NewMux()
+
+	mux.Handle("panics", func(_ context.Context, task Task) error {
+		panic("boom")
+	})
+
+	store.put(Task{ID: "t1", Type: "panics", Priority: "medium"})
+	q.EnqueueWithPriority("t1", "medium")
+
+	pool := NewPool(q, store, mux, 1, testLogger(), WithMaxRetries(2), WithBaseDelay(time.Millisecond))
+	pool.Start()
+	defer pool.Stop()
+
+	// If the panic isn't recovered, this whole test binary crashes instead
+	// of reaching this assertion — that's the strongest possible signal.
+	waitForStatus(t, store, "t1", "failed", 2*time.Second)
+
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		q.mu.Lock()
+		n := len(q.dlq)
+		q.mu.Unlock()
+		if n == 1 {
+			return
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+	t.Fatal("expected panicking task to land in the DLQ like any other failure")
+}
+
 func TestPool_CancelledTaskSkipped(t *testing.T) {
 	q := &fakeQueue{}
 	store := newFakeStore()

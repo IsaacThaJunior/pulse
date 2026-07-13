@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -244,7 +245,7 @@ func (p *Pool) processWithRetry(taskID string, workerID int, queueName string) {
 			err = fmt.Errorf("no handler registered for task type %q", task.Type)
 		} else {
 			execStart := time.Now()
-			err = handlerFn(spanCtx, task)
+			err = p.invokeHandler(spanCtx, handlerFn, task)
 			p.metrics.TaskDuration(time.Since(execStart).Seconds())
 		}
 
@@ -309,4 +310,27 @@ func (p *Pool) processWithRetry(taskID string, workerID int, queueName string) {
 		"error", lastErr,
 		slog.Duration("duration", time.Since(start)),
 	)
+}
+
+// invokeHandler runs h and recovers any panic, converting it into an error
+// so a bug in one handler can't crash the whole process — it's treated as
+// an ordinary failure and flows through the same retry/DLQ path as any
+// other error. The full stack trace is logged immediately (for debugging);
+// the returned error stays a short one-liner, since it flows into
+// Store.RecordAttempt's errMsg, which a real Store might persist to a
+// bounded column.
+func (p *Pool) invokeHandler(ctx context.Context, h HandlerFunc, task Task) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			stack := debug.Stack()
+			p.logger.Error("handler panicked",
+				"task_id", task.ID,
+				"task_type", task.Type,
+				"panic", r,
+				"stack", string(stack),
+			)
+			err = fmt.Errorf("handler panic: %v", r)
+		}
+	}()
+	return h(ctx, task)
 }

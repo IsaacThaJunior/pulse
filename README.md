@@ -240,8 +240,13 @@ stats := pool.HealthStats()
 
 ## Reliability
 
+- A panic inside a handler is recovered and treated as an ordinary failure
+  — it retries with backoff and eventually goes to the DLQ like any other
+  error, instead of crashing the whole pool. A bug in one task type can't
+  take down every other task type running alongside it.
 - Unit tests cover the pool's core state machine: success, retry-then-succeed,
-  retry-exhaustion → DLQ, and cancelled-task skip (`worker/pool_test.go`).
+  retry-exhaustion → DLQ, cancelled-task skip, and handler-panic recovery
+  (`worker/pool_test.go`).
 - A concurrency stress test (`worker/concurrency_test.go`) runs 2,000 tasks
   across 16 workers, enqueued from many goroutines *while the pool is
   already running*, under `go test -race` — exercising `Queue`/`Store`
