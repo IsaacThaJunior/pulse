@@ -36,6 +36,7 @@ database integration; those are your app's job, not the library's.
 - [Reliability](#reliability)
 - [Examples](#examples)
 - [Reference app](#reference-app)
+- [Contributing](#contributing)
 
 ---
 
@@ -267,3 +268,9 @@ that now imports `pulse` for everything generic instead of implementing it
 inline. That app is the proving ground for `pulse`'s design, including the
 `internal/chaining` pattern referenced above for adding declarative task
 chaining on top of `pulse` without the library needing to know about it.
+
+## Contributing
+
+Contributions are welcome — bug reports, fixes, new `Queue`/`Store`
+backends, docs. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the
+PR checklist. It's `v0.1.0`; there's real room to shape where this goes.
